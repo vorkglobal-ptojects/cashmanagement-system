@@ -1,0 +1,223 @@
+// Prisma schema for Cash Management System
+// Clean relational design supporting SQLite (local dev/test) and PostgreSQL (production deployment)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id          String   @id // e.g. "HQ", "BRL", "DEM", "WAT", "KAD", "KOT"
+  name        String
+  code        String   @unique
+  city        String
+  address     String?
+  phone       String?
+  cashLimit   Float    @default(5000000.0) // Max cash holding allowed in branch
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         User[]
+  cashAccounts  CashAccount[]
+  fromTransfers CashTransfer[] @relation("FromBranch")
+  toTransfers   CashTransfer[] @relation("ToBranch")
+  tillSessions  TillSession[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         String   // SYSTEM_ADMIN, FINANCE_ADMIN, BRANCH_MANAGER, CASHIER, DISPATCHER, RECEIVING_OFFICER, AUDITOR
+  branchId     String?  // null for consolidated Head Office / System Admin
+  isActive     Boolean  @default(true)
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  branch       Branch?        @relation(fields: [branchId], references: [id])
+  tillSessions TillSession[]  @relation("CashierSessions")
+}
+
+model CashAccount {
+  id            String   @id @default(cuid())
+  accountNumber String   @unique // e.g. "VAULT-HQ-01", "TILL-BRL-01", "BANK-COMBANK-01"
+  name          String
+  type          String   // VAULT, TILL, BANK_ACCOUNT, IN_TRANSIT
+  branchId      String?  // null for global accounts (e.g. In-Transit, Central Banks)
+  currency      String   @default("LKR")
+  balance       Float    @default(0.0)
+  maxLimit      Float?
+  bankName      String?  // For bank accounts (e.g. Commercial Bank of Ceylon, Bank of Ceylon)
+  bankAccountNo String?
+  status        String   @default("ACTIVE") // ACTIVE, FROZEN, CLOSED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  branch        Branch?        @relation(fields: [branchId], references: [id])
+  tillSessions  TillSession[]  @relation("TillAccount")
+  sourceTransfers CashTransfer[] @relation("SourceAccount")
+  destTransfers   CashTransfer[] @relation("DestAccount")
+}
+
+model CashTransfer {
+  id                   String    @id @default(cuid())
+  transferNumber       String    @unique // e.g. "CTR-2026-0001"
+  transferType         String    // BRANCH_TO_BRANCH, VAULT_TO_TILL, TILL_TO_VAULT, BANK_WITHDRAWAL, BANK_DEPOSIT
+  sourceAccountId      String
+  destinationAccountId String
+  fromBranchId         String?
+  toBranchId           String?
+  
+  requestedAmount      Float
+  approvedAmount       Float?
+  dispatchedAmount     Float?
+  receivedAmount       Float?
+  varianceAmount       Float     @default(0.0)
+  currency             String    @default("LKR")
+  
+  status               String    @default("REQUESTED") // DRAFT, REQUESTED, APPROVED, REJECTED, ASSIGNED, DISPATCHED, IN_TRANSIT, RECEIVED, ACCEPTED, DISCREPANCY_FLAGGED, CANCELLED
+  urgency              String    @default("NORMAL")    // LOW, NORMAL, HIGH, CRITICAL
+  purpose              String
+  
+  // Security and Transportation Details
+  securityBagNumber    String?
+  vehicleNumber        String?
+  courierName          String?
+  courierNic           String?
+  waybillNumber        String?
+  discrepancyReason    String?
+  
+  // Separation of Duties Actor IDs
+  requestedByUserId    String
+  requestedByUsername  String
+  approvedByUserId     String?
+  approvedByUsername   String?
+  dispatchedByUserId   String?
+  dispatchedByUsername String?
+  receivedByUserId     String?
+  receivedByUsername   String?
+  acceptedByUserId     String?
+  acceptedByUsername   String?
+  
+  requestedAt          DateTime  @default(now())
+  approvedAt           DateTime?
+  dispatchedAt         DateTime?
+  receivedAt           DateTime?
+  acceptedAt           DateTime?
+  updatedAt            DateTime  @updatedAt
+
+  sourceAccount        CashAccount @relation("SourceAccount", fields: [sourceAccountId], references: [id])
+  destinationAccount   CashAccount @relation("DestAccount", fields: [destinationAccountId], references: [id])
+  fromBranch           Branch?     @relation("FromBranch", fields: [fromBranchId], references: [id])
+  toBranch             Branch?     @relation("ToBranch", fields: [toBranchId], references: [id])
+  denominationTallies  DenominationTally[]
+  journalEntries       GlJournalEntry[]
+}
+
+model DenominationTally {
+  id               String   @id @default(cuid())
+  stage            String   // DISPATCH, RECEIPT, TILL_OPEN, TILL_CLOSE
+  transferId       String?
+  tillSessionId    String?
+  
+  note5000         Int      @default(0)
+  note1000         Int      @default(0)
+  note500          Int      @default(0)
+  note100          Int      @default(0)
+  note50           Int      @default(0)
+  note20           Int      @default(0)
+  coins            Float    @default(0.0)
+  totalCalculated  Float    @default(0.0)
+  
+  countedByUserId  String
+  countedByName    String
+  verifiedByUserId String?
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  cashTransfer     CashTransfer? @relation(fields: [transferId], references: [id])
+  tillSession      TillSession?  @relation(fields: [tillSessionId], references: [id])
+}
+
+model TillSession {
+  id                     String    @id @default(cuid())
+  sessionCode            String    @unique // e.g. "TIL-20261023-BRL-01"
+  tillAccountId          String
+  cashierUserId          String
+  cashierUsername        String
+  supervisorUserId       String?
+  supervisorUsername     String?
+  branchId               String
+  
+  openedAt               DateTime  @default(now())
+  closedAt               DateTime?
+  status                 String    @default("OPEN") // OPEN, BALANCED, OVER, SHORT, FORCE_CLOSED
+  
+  openingBalance         Float
+  cashIn                 Float     @default(0.0) // Cash received/transferred in
+  cashOut                Float     @default(0.0) // Cash disbursed/transferred out
+  expectedClosingBalance Float     @default(0.0)
+  actualClosingBalance   Float?
+  variance               Float     @default(0.0) // actual - expected
+  reconciliationNotes    String?
+  
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  tillAccount            CashAccount @relation("TillAccount", fields: [tillAccountId], references: [id])
+  cashier                User        @relation("CashierSessions", fields: [cashierUserId], references: [id])
+  branch                 Branch      @relation(fields: [branchId], references: [id])
+  denominationTallies    DenominationTally[]
+}
+
+model GlJournalEntry {
+  id             String          @id @default(cuid())
+  entryNumber    String          @unique // e.g. "JV-2026-0001"
+  postingDate    DateTime        @default(now())
+  branchId       String?
+  referenceType  String          // CASH_TRANSFER_DISPATCH, CASH_TRANSFER_ACCEPT, TILL_OPEN, TILL_VARIANCE
+  referenceId    String
+  description    String
+  totalDebit     Float
+  totalCredit    Float
+  createdAt      DateTime        @default(now())
+
+  cashTransfer   CashTransfer?   @relation(fields: [referenceId], references: [id])
+  lines          GlJournalLine[]
+}
+
+model GlJournalLine {
+  id             String         @id @default(cuid())
+  journalEntryId String
+  accountId      String
+  accountName    String
+  debit          Float          @default(0.0)
+  credit         Float          @default(0.0)
+  memo           String?
+
+  journalEntry   GlJournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  userId         String?
+  username       String?
+  role           String?
+  branchId       String?
+  action         String   // LOGIN, LOGOUT, REQUEST_SUBMITTED, REQUEST_APPROVED, CASH_DISPATCHED, CASH_RECEIVED, VARIANCE_FLAGGED, etc.
+  resource       String   // CashTransfer, TillSession, User, Branch, etc.
+  resourceId     String?
+  details        String   // JSON string of metadata, diffs, previous/next states
+  ipAddress      String?
+  status         String   @default("SUCCESS") // SUCCESS, FAILURE, REJECTED
+}
