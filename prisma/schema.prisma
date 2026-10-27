@@ -22,11 +22,14 @@ model Branch {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users         User[]
-  cashAccounts  CashAccount[]
-  fromTransfers CashTransfer[] @relation("FromBranch")
-  toTransfers   CashTransfer[] @relation("ToBranch")
-  tillSessions  TillSession[]
+  users               User[]
+  cashAccounts        CashAccount[]
+  fromTransfers       CashTransfer[] @relation("FromBranch")
+  toTransfers         CashTransfer[] @relation("ToBranch")
+  tillSessions        TillSession[]
+  registeredCustomers Customer[]     @relation("RegisteredBranch")
+  requestingTransfers FundTransferRequest[] @relation("ReqBranch")
+  fundingTransfers    FundTransferRequest[] @relation("FundBranch")
 }
 
 model User {
@@ -215,9 +218,101 @@ model AuditEvent {
   role           String?
   branchId       String?
   action         String   // LOGIN, LOGOUT, REQUEST_SUBMITTED, REQUEST_APPROVED, CASH_DISPATCHED, CASH_RECEIVED, VARIANCE_FLAGGED, etc.
-  resource       String   // CashTransfer, TillSession, User, Branch, etc.
+  resource       String   // CashTransfer, TillSession, User, Branch, Customer, FundTransferRequest, etc.
   resourceId     String?
   details        String   // JSON string of metadata, diffs, previous/next states
   ipAddress      String?
   status         String   @default("SUCCESS") // SUCCESS, FAILURE, REJECTED
 }
+
+model Customer {
+  id                  String   @id // e.g. "CUST-2026-0001"
+  fullName            String
+  nicNumber           String   @unique
+  address             String
+  phoneNumber         String
+  bankName            String
+  bankBranch          String
+  bankAccountNumber   String
+  accountHolderName   String
+  registrationDate    DateTime @default(now())
+  registeringUserId   String
+  registeringBranchId String
+  status              String   @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  registeringBranch   Branch   @relation("RegisteredBranch", fields: [registeringBranchId], references: [id])
+  fundTransfers       FundTransferRequest[]
+}
+
+model FundTransferRequest {
+  id                        String    @id // e.g. "BFT-2026-0001"
+  customerId                String
+  requestingBranchId        String
+  fundingBranchId           String
+  requestedAmount           Float
+  currency                  String    @default("LKR")
+  reason                    String
+  additionalNotes           String?
+  requestDate               DateTime  @default(now())
+  
+  requestingUserId          String
+  requestingUserName        String
+  
+  status                    String    @default("PENDING_APPROVAL") 
+  // DRAFT, PENDING_APPROVAL, APPROVED_AWAITING_PAYMENT, REJECTED, PAYMENT_SUBMITTED_AWAITING_VERIFICATION, VERIFICATION_REQUIRED, COMPLETED, CANCELLED
+  
+  // Approval Workflow
+  approvedByUserId          String?
+  approvedByUserName        String?
+  approvalDecision          String?   // APPROVED, REJECTED
+  approvalNotes             String?
+  approvalDate              DateTime?
+  rejectionReason           String?
+  
+  // Direct Bank Payment
+  actualAmountPaid          Float?
+  paymentDate               DateTime?
+  paymentMethod             String?   // SLIPS, CEFT, RTGS, INTERNAL_BANK_TRANSFER
+  bankTransactionReference  String?
+  paidByUserId              String?
+  paidByUserName            String?
+  paymentNotes              String?
+  
+  // Receipt Upload & Confirmation
+  receiptUrl                String?   // Base64 Data URL or file URI
+  receiptFileName           String?
+  receiptMimeType           String?
+  receiptUploadedAt         DateTime?
+  receiptUploadedByUserId   String?
+  receiptUploadedByUserName String?
+  
+  // Verification
+  verifiedByUserId          String?
+  verifiedByUserName        String?
+  verifiedAt                DateTime?
+  verificationStatus        String?   // VERIFIED, FLAGGED_FOR_REVIEW
+  verificationNotes         String?
+  
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  customer                  Customer  @relation(fields: [customerId], references: [id])
+  requestingBranch          Branch    @relation("ReqBranch", fields: [requestingBranchId], references: [id])
+  fundingBranch             Branch    @relation("FundBranch", fields: [fundingBranchId], references: [id])
+}
+
+model Notification {
+  id                String   @id @default(cuid())
+  recipientUserId   String?
+  recipientRole     String?  // BRANCH_MANAGER, MAIN_ADMIN, BRANCH_EMPLOYEE
+  recipientBranchId String?
+  title             String
+  message           String
+  link              String?
+  type              String   // REQUEST_SUBMITTED, REQUEST_APPROVED, REQUEST_REJECTED, PAYMENT_SUBMITTED, PAYMENT_VERIFIED, VERIFICATION_FLAGGED
+  isRead            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+}
+

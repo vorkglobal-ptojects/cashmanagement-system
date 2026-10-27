@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, CheckCircle2, AlertCircle, RefreshCw, Terminal } from 'lucide-react';
+import { ShieldCheck, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { AuthSession } from '@/lib/types';
 
 interface AuditViewProps {
@@ -32,100 +32,102 @@ export default function AuditView({ currentUser }: AuditViewProps) {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff' }}>
-            System Audit Trail & Security Ledger
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Dynamics 365 Command Bar */}
+      <div className="d365-card" style={{
+        padding: '0.65rem 1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <ShieldCheck size={18} color="#0d9488" />
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+            Audit Trail &amp; Regulatory Compliance Ledger
           </h2>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Tamper-evident chronological logs of every authentication attempt, state transition, override, and financial movement.
-          </p>
+          <span style={{
+            fontSize: '0.75rem',
+            background: '#f1f5f9',
+            color: '#475569',
+            padding: '0.15rem 0.5rem',
+            borderRadius: '999px',
+            fontWeight: 600,
+          }}>
+            {logs.length} Audit Events
+          </span>
         </div>
-        <button onClick={fetchLogs} className="btn-secondary">
-          <RefreshCw size={16} />
-          <span>Refresh Audit Logs</span>
+
+        <button
+          type="button"
+          onClick={fetchLogs}
+          className="btn-secondary"
+          disabled={loading}
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Logs
         </button>
       </div>
 
-      <div className="glass-card" style={{ padding: '0.5rem', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.825rem' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '0.75rem 1rem' }}>Timestamp</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Action</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Actor & Role</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Resource</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Details & Metadata</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length === 0 ? (
+      {/* Main Table */}
+      <div className="d365-card" style={{ overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="d365-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-subtle)' }}>
-                  No audit log events retrieved.
-                </td>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>Actor &amp; Role</th>
+                <th>Resource</th>
+                <th>Status</th>
+                <th>Details &amp; Metadata</th>
               </tr>
-            ) : (
-              logs.map((log) => {
-                const isSuccess = log.status === 'SUCCESS';
-                let parsedDetails = log.details;
-                try {
-                  parsedDetails = JSON.stringify(JSON.parse(log.details));
-                } catch {
-                  // Keep as string
-                }
-
-                return (
-                  <tr key={log.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)' }}>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>
+            </thead>
+            <tbody>
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                    {loading ? 'Loading audit records...' : 'No audit records recorded yet.'}
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id}>
+                    <td style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#fff' }}>
+                    <td style={{ fontWeight: 600, color: '#0f172a' }}>
                       <span style={{
-                        padding: '0.2rem 0.45rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
+                        background: '#f1f5f9',
+                        padding: '0.15rem 0.45rem',
                         borderRadius: '4px',
                         fontFamily: 'monospace',
-                        fontSize: '0.75rem',
+                        fontSize: '0.78rem',
                       }}>
                         {log.action}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ color: '#fff', fontWeight: 500 }}>{log.username || 'System'}</div>
-                      <div style={{ color: 'var(--text-subtle)', fontSize: '0.7rem' }}>
-                        {log.role || 'System'} {log.branchId ? `(${log.branchId})` : ''}
-                      </div>
+                    <td>
+                      <div style={{ fontWeight: 500, color: '#0f172a' }}>{log.actorName || log.actorId}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{log.role}</div>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
-                      {log.resource} {log.resourceId ? `[${log.resourceId.slice(0, 8)}...]` : ''}
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#0284c7' }}>
+                      {log.resource}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: isSuccess ? 'var(--primary-emerald)' : 'var(--accent-red)',
-                      }}>
-                        {isSuccess ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    <td>
+                      <span className={`status-badge ${log.status === 'SUCCESS' ? 'status-completed' : 'status-rejected'}`}>
                         {log.status}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', maxWidth: '360px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <code style={{ fontSize: '0.7rem', color: 'var(--text-subtle)' }}>
-                        {parsedDetails}
-                      </code>
+                    <td style={{ fontSize: '0.78rem', color: '#475569', maxWidth: '350px' }}>
+                      {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details || '—'}
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -166,7 +166,12 @@ export function requireRole(
  * Head Office & System Admins have multi-branch access
  */
 export function validateBranchScope(session: AuthSession, targetBranchId?: string | null): boolean {
-  if (session.role === 'SYSTEM_ADMIN' || session.role === 'FINANCE_ADMIN' || session.role === 'AUDITOR') {
+  if (
+    session.role === 'MAIN_ADMIN' ||
+    session.role === 'SYSTEM_ADMIN' ||
+    session.role === 'FINANCE_ADMIN' ||
+    session.role === 'AUDITOR'
+  ) {
     return true; // Consolidated organization-wide visibility
   }
   if (!targetBranchId) return true;
