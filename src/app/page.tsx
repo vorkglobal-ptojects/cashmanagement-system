@@ -40,8 +40,8 @@ export default function CashManagementApp() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   // Login form state
-  const [loginIdentifier, setLoginIdentifier] = useState('sanjay');
-  const [loginPassword, setLoginPassword] = useState('Admin@123');
+  const [loginIdentifier, setLoginIdentifier] = useState('borella');
+  const [loginPassword, setLoginPassword] = useState('borella123@');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -125,7 +125,16 @@ export default function CashManagementApp() {
   }, [currentUser?.userId]);
 
   const handleRoleSwitch = async (targetUsername: string) => {
-    await performLogin(targetUsername, 'Admin@123');
+    let pass = 'admin123@';
+    if (targetUsername === 'manager' || targetUsername.startsWith('manager_')) pass = 'manager123@';
+    else if (targetUsername === 'admin' || targetUsername === 'sanjay') pass = 'admin123@';
+    else if (targetUsername.startsWith('employee_')) {
+      const b = targetUsername.replace('employee_', '');
+      pass = `${b}123@`;
+    } else {
+      pass = `${targetUsername}123@`;
+    }
+    await performLogin(targetUsername, pass);
   };
 
   const handleLogout = async () => {
@@ -316,8 +325,11 @@ export default function CashManagementApp() {
                   <select
                     value={loginIdentifier}
                     onChange={(e) => {
-                      setLoginIdentifier(e.target.value);
-                      setLoginPassword('Admin@123');
+                      const id = e.target.value;
+                      setLoginIdentifier(id);
+                      if (id === 'admin' || id === 'sanjay') setLoginPassword('admin123@');
+                      else if (id === 'manager') setLoginPassword('manager123@');
+                      else setLoginPassword(`${id}123@`);
                     }}
                     style={{
                       width: '100%',
@@ -327,20 +339,31 @@ export default function CashManagementApp() {
                       borderRadius: '10px',
                       padding: '0.75rem 2.2rem 0.75rem 1rem',
                       fontSize: '0.88rem',
-                      fontWeight: 500,
+                      fontWeight: 600,
                       outline: 'none',
                       appearance: 'none',
                       cursor: 'pointer',
                       boxSizing: 'border-box',
                     }}
                   >
-                    <option value="sanjay">Main Administrator (Mr. Sanjay)</option>
-                    <option value="manager_borella">Branch Manager (Borella Branch)</option>
-                    <option value="manager_office">Manager Head Office</option>
-                    <option value="manager_super">Manager SUPER Branch</option>
-                    <option value="employee_borella">Branch Employee (Borella Branch)</option>
-                    <option value="employee_homagama">Branch Employee (Homagama Branch)</option>
-                    <option value="employee_panadura">Branch Employee (Panadura Branch)</option>
+                    <optgroup label="Branch Logins (format: branch / branch123@)">
+                      <option value="borella">Borella Branch (borella / borella123@)</option>
+                      <option value="dehiwela">Dehiwela Branch (dehiwela / dehiwela123@)</option>
+                      <option value="dematagoda">Dematagoda Branch (dematagoda / dematagoda123@)</option>
+                      <option value="homagama">Homagama Branch (homagama / homagama123@)</option>
+                      <option value="kadawatha">Kadawatha Branch (kadawatha / kadawatha123@)</option>
+                      <option value="kiribathgoda">Kiribathgoda Branch (kiribathgoda / kiribathgoda123@)</option>
+                      <option value="kottawa">Kottawa Branch (kottawa / kottawa123@)</option>
+                      <option value="panadura">Panadura Branch (panadura / panadura123@)</option>
+                      <option value="w3">W3 Branch (w3 / w3123@)</option>
+                      <option value="w4">W4 Branch (w4 / w4123@)</option>
+                      <option value="office">Office Branch (office / office123@)</option>
+                      <option value="super">Super Branch (super / super123@)</option>
+                    </optgroup>
+                    <optgroup label="Management & Administration">
+                      <option value="manager">Manager (manager / manager123@)</option>
+                      <option value="admin">Admin (admin / admin123@)</option>
+                    </optgroup>
                   </select>
                   <div style={{
                     position: 'absolute',

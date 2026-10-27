@@ -33,13 +33,14 @@ interface SidebarProps {
 }
 
 const PRESET_PERSONAS = [
-  { username: 'sanjay', label: 'Mr. Sanjay', role: 'Main Administrator', branch: 'All 11 branches', initials: 'MS' },
-  { username: 'manager_borella', label: 'Dhammika Senanayake', role: 'Branch Manager', branch: 'Borella', initials: 'DS' },
-  { username: 'manager_office', label: 'Chamari Wickramasinghe', role: 'Branch Manager', branch: 'Head Office', initials: 'CW' },
-  { username: 'manager_super', label: 'Sunil Fernandopulle', role: 'Branch Manager', branch: 'SUPER Branch', initials: 'SF' },
-  { username: 'employee_borella', label: 'Kavindi Silva', role: 'Branch Employee', branch: 'Borella', initials: 'KS' },
-  { username: 'employee_dehiwela', label: 'Niroshan Bandara', role: 'Branch Employee', branch: 'Dehiwela', initials: 'NB' },
-  { username: 'employee_homagama', label: 'Saman Kumara', role: 'Branch Employee', branch: 'Homagama', initials: 'SK' },
+  { username: 'admin', label: 'Admin (Mr. Sanjay)', role: 'Main Administrator', branch: 'All 11 branches', initials: 'AD' },
+  { username: 'manager', label: 'Manager', role: 'Branch Manager', branch: 'All branches', initials: 'MG' },
+  { username: 'borella', label: 'Borella Branch', role: 'Branch Employee', branch: 'Borella', initials: 'BR' },
+  { username: 'dehiwela', label: 'Dehiwela Branch', role: 'Branch Employee', branch: 'Dehiwela', initials: 'DH' },
+  { username: 'homagama', label: 'Homagama Branch', role: 'Branch Employee', branch: 'Homagama', initials: 'HG' },
+  { username: 'panadura', label: 'Panadura Branch', role: 'Branch Employee', branch: 'Panadura', initials: 'PN' },
+  { username: 'dematagoda', label: 'Dematagoda Branch', role: 'Branch Employee', branch: 'Dematagoda', initials: 'DM' },
+  { username: 'office', label: 'Office Branch', role: 'Branch Employee', branch: 'Office', initials: 'OF' },
 ];
 
 export default function Sidebar({
