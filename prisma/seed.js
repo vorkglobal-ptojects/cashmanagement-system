@@ -46,10 +46,7 @@ async function main() {
   }
   console.log(`Seeded ${branches.length} branches.`);
 
-  // 3. Seed Users across roles with intuitive logins:
-  // Branch logins: <branchname> / <branchname>123@
-  // Manager login: manager / manager123@
-  // Admin login: admin / admin123@ (and sanjay / admin123@)
+  // 3. Seed Users across roles with unique, varied, non-obvious enterprise passwords:
   const users = [
     // --- MAIN ADMINISTRATOR & SYSTEM ADMIN ---
     {
@@ -59,7 +56,7 @@ async function main() {
       lastName: 'User',
       role: 'MAIN_ADMIN',
       branchId: 'OFFICE',
-      passwordHash: await bcrypt.hash('admin123@', 10),
+      passwordHash: await bcrypt.hash('Adm#98Kx$21', 10),
       phone: '+94 77 000 0001',
     },
     {
@@ -69,7 +66,7 @@ async function main() {
       lastName: 'Sharma',
       role: 'MAIN_ADMIN',
       branchId: 'OFFICE',
-      passwordHash: await bcrypt.hash('admin123@', 10),
+      passwordHash: await bcrypt.hash('Snj@74Vq#89', 10),
       phone: '+94 77 123 4567',
     },
 
@@ -81,11 +78,11 @@ async function main() {
       lastName: 'Manager',
       role: 'BRANCH_MANAGER',
       branchId: 'OFFICE',
-      passwordHash: await bcrypt.hash('manager123@', 10),
+      passwordHash: await bcrypt.hash('Mgr$62Tp*44', 10),
       phone: '+94 77 345 6789',
     },
 
-    // --- DIRECT BRANCH LOGINS (username = branch, password = branch123@) ---
+    // --- DIRECT BRANCH LOGINS (Unique, non-obvious passwords) ---
     {
       username: 'borella',
       email: 'borella@company.lk',
@@ -93,7 +90,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'BRL',
-      passwordHash: await bcrypt.hash('borella123@', 10),
+      passwordHash: await bcrypt.hash('Bor#83Qm$19', 10),
       phone: '+94 77 678 9012',
     },
     {
@@ -103,7 +100,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'DEH',
-      passwordHash: await bcrypt.hash('dehiwela123@', 10),
+      passwordHash: await bcrypt.hash('Deh$47Wk#52', 10),
       phone: '+94 77 789 0123',
     },
     {
@@ -113,7 +110,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'DEM',
-      passwordHash: await bcrypt.hash('dematagoda123@', 10),
+      passwordHash: await bcrypt.hash('Dem*91Px#38', 10),
       phone: '+94 77 123 0004',
     },
     {
@@ -123,7 +120,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'HOM',
-      passwordHash: await bcrypt.hash('homagama123@', 10),
+      passwordHash: await bcrypt.hash('Hom#56Yr$71', 10),
       phone: '+94 77 890 1234',
     },
     {
@@ -133,7 +130,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'KAD',
-      passwordHash: await bcrypt.hash('kadawatha123@', 10),
+      passwordHash: await bcrypt.hash('Kad$32Tv#84', 10),
       phone: '+94 77 123 0006',
     },
     {
@@ -143,7 +140,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'KIR',
-      passwordHash: await bcrypt.hash('kiribathgoda123@', 10),
+      passwordHash: await bcrypt.hash('Kir*79Lp#63', 10),
       phone: '+94 77 123 0007',
     },
     {
@@ -153,7 +150,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'KOT',
-      passwordHash: await bcrypt.hash('kottawa123@', 10),
+      passwordHash: await bcrypt.hash('Kot#41Nx$95', 10),
       phone: '+94 77 123 0008',
     },
     {
@@ -163,7 +160,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'OFFICE',
-      passwordHash: await bcrypt.hash('office123@', 10),
+      passwordHash: await bcrypt.hash('Off*65Rt#14', 10),
       phone: '+94 77 123 0001',
     },
     {
@@ -173,7 +170,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'PAN',
-      passwordHash: await bcrypt.hash('panadura123@', 10),
+      passwordHash: await bcrypt.hash('Pan$88Qw#27', 10),
       phone: '+94 77 901 2345',
     },
     {
@@ -183,7 +180,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'W3',
-      passwordHash: await bcrypt.hash('w3123@', 10),
+      passwordHash: await bcrypt.hash('W3b#72Vz$89', 10),
       phone: '+94 77 123 0010',
     },
     {
@@ -193,7 +190,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'W4',
-      passwordHash: await bcrypt.hash('w4123@', 10),
+      passwordHash: await bcrypt.hash('W4p$53Tm#61', 10),
       phone: '+94 77 123 0011',
     },
     {
@@ -203,7 +200,7 @@ async function main() {
       lastName: 'Branch',
       role: 'BRANCH_EMPLOYEE',
       branchId: 'SUPER',
-      passwordHash: await bcrypt.hash('super123@', 10),
+      passwordHash: await bcrypt.hash('Sup*94Kx#32', 10),
       phone: '+94 77 123 0012',
     },
 

@@ -30,6 +30,8 @@ interface SidebarProps {
   selectedBranch?: string;
   setSelectedBranch?: (branch: string) => void;
   branches?: any[];
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 const PRESET_PERSONAS = [
@@ -55,6 +57,8 @@ export default function Sidebar({
   selectedBranch = 'All',
   setSelectedBranch,
   branches = [],
+  isMobileOpen = false,
+  onCloseMobile,
 }: SidebarProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -136,21 +140,24 @@ export default function Sidebar({
     .toUpperCase() || 'US';
 
   return (
-    <aside style={{
-      width: '260px',
-      background: '#132644', // User mockup deep navy
-      color: '#ffffff',
-      display: 'flex',
-      flexDirection: 'column',
-      flexShrink: 0,
-      minHeight: '100vh',
-      padding: '1.25rem 1rem',
-      userSelect: 'none',
-      position: 'relative',
-      boxSizing: 'border-box',
-    }}>
+    <aside
+      className={`desktop-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
+      style={{
+        width: '260px',
+        background: '#132644', // User mockup deep navy
+        color: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        minHeight: '100vh',
+        padding: '1.25rem 1rem',
+        userSelect: 'none',
+        position: 'relative',
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Brand Header */}
-      <div style={{ marginBottom: '1.5rem', paddingLeft: '0.25rem' }}>
+      <div style={{ marginBottom: '1.5rem', paddingLeft: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{
             width: '32px',
@@ -173,6 +180,27 @@ export default function Sidebar({
             </div>
           </div>
         </div>
+
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#ffffff',
+              padding: '0.35rem 0.5rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Close Menu"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Role Portal Badge Box (Mockup style) */}
@@ -250,7 +278,10 @@ export default function Sidebar({
           return (
             <button
               key={item.id}
-              onClick={() => setCurrentScreen(item.id)}
+              onClick={() => {
+                setCurrentScreen(item.id);
+                onCloseMobile?.();
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',

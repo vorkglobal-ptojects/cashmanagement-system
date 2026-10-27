@@ -21,11 +21,23 @@ export default function TransactionHistoryView({
   const [selectedBranch, setSelectedBranch] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
 
+  const isEmployee = currentUser?.role === 'BRANCH_EMPLOYEE';
+  const employeeBranch = currentUser?.branchId;
+
   const filtered = transfers.filter((t) => {
+    // If employee, restrict strictly to their own branch requests
+    if (isEmployee && employeeBranch) {
+      if (t.requestingBranchId !== employeeBranch && t.fundingBranchId !== employeeBranch) {
+        return false;
+      }
+    }
+
     const matchesBranch =
-      selectedBranch === 'All' ||
-      t.requestingBranchId === selectedBranch ||
-      t.fundingBranchId === selectedBranch;
+      isEmployee
+        ? true
+        : selectedBranch === 'All' ||
+          t.requestingBranchId === selectedBranch ||
+          t.fundingBranchId === selectedBranch;
 
     const matchesStatus = selectedStatus === 'All' || t.status === selectedStatus;
 
@@ -49,6 +61,7 @@ export default function TransactionHistoryView({
   const exportCsv = () => {
     const headers = [
       'Request Number',
+      'Date & Time',
       'Customer',
       'NIC',
       'Bank',
@@ -56,12 +69,16 @@ export default function TransactionHistoryView({
       'Funding Branch',
       'Amount',
       'Status',
+      'Approved By',
+      'Approved At',
       'Payment Rail',
       'Bank Reference',
-      'Created At',
+      'Paid By',
+      'Receipt Attached',
     ];
     const rows = filtered.map((t) => [
       t.requestNumber || t.id,
+      new Date(t.createdAt).toLocaleString(),
       `"${t.customerName || t.customer?.fullName || ''}"`,
       t.customerNic || t.customer?.nicNumber || '',
       `"${t.bankName || t.customer?.bankName || ''}"`,
@@ -69,9 +86,12 @@ export default function TransactionHistoryView({
       t.fundingBranchId,
       t.requestedAmount,
       t.status,
+      t.approvedByUserName || '',
+      t.approvalDate ? new Date(t.approvalDate).toLocaleString() : '',
       t.paymentMethod || '',
       t.bankReference || t.bankTransactionReference || '',
-      new Date(t.createdAt).toISOString(),
+      t.paidByUserName || '',
+      t.receiptUrl ? 'YES' : 'NO',
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -98,7 +118,7 @@ export default function TransactionHistoryView({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <History size={18} color="#0d9488" />
           <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-            Complete Interbranch Transfer &amp; Payment Ledger
+            {isEmployee ? `Branch History Ledger (${currentUser?.branchName || currentUser?.branchId})` : 'All Branches Transfer History & Audit Ledger'}
           </h2>
           <span style={{
             fontSize: '0.75rem',
@@ -149,22 +169,28 @@ export default function TransactionHistoryView({
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.78rem', color: '#64748b' }}>Branch:</label>
-          <select
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className="field-input"
-            style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
-          >
-            <option value="All">All 11 Branches</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isEmployee ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.78rem', color: '#64748b' }}>Branch:</label>
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="field-input"
+              style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
+            >
+              <option value="All">All 11 Branches</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.78rem', color: '#087f70', fontWeight: 600 }}>
+            Showing branch: {currentUser?.branchName || currentUser?.branchId}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label style={{ fontSize: '0.78rem', color: '#64748b' }}>Status:</label>
@@ -187,18 +213,18 @@ export default function TransactionHistoryView({
 
       {/* Main Table */}
       <div className="d365-card" style={{ overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="d365-table">
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table className="d365-table" style={{ minWidth: '950px' }}>
             <thead>
               <tr>
                 <th>Request ID</th>
-                <th>Date</th>
+                <th>Request Date &amp; Time</th>
                 <th>Customer / Beneficiary</th>
-                <th>Bank &amp; Account</th>
-                <th>Requesting &rarr; Funding</th>
+                <th>Routing</th>
                 <th>Amount (LKR)</th>
                 <th>Status</th>
-                <th>Payment Ref</th>
+                <th>Approval Details</th>
+                <th>Payment &amp; Receipt</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -211,42 +237,33 @@ export default function TransactionHistoryView({
                 </tr>
               ) : (
                 filtered.map((t) => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => onSelectTransfer(t)} style={{ cursor: 'pointer' }}>
                     <td>
-                      <button
-                        onClick={() => onSelectTransfer(t)}
+                      <span
                         style={{
-                          background: 'none',
-                          border: 'none',
                           color: '#0284c7',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          textDecoration: 'underline',
+                          fontWeight: 700,
                           fontSize: '0.84rem',
                         }}
                       >
                         {t.requestNumber || t.id}
-                      </button>
+                      </span>
                     </td>
-                    <td style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                      {new Date(t.createdAt).toLocaleDateString()}
+                    <td style={{ fontSize: '0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontWeight: 600 }}>{new Date(t.createdAt).toLocaleDateString()}</div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.7rem' }}>{new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 600, color: '#0f172a' }}>{t.customerName || t.customer?.fullName || 'Valued Customer'}</div>
                       <div style={{ fontSize: '0.72rem', color: '#64748b' }}>NIC: {t.customerNic || t.customer?.nicNumber || '—'}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#0d9488' }}>{t.bankName || t.customer?.bankName || ''}</div>
                     </td>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{t.bankName || t.customer?.bankName || 'Direct Account'}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#0d9488', fontFamily: 'monospace' }}>
-                        {t.customer?.bankAccountNumber || '•••• ••••'}
-                      </div>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}>
                       <span style={{ color: '#475569' }}>{t.requestingBranchId}</span>
-                      <span style={{ color: '#0d9488', margin: '0 0.35rem', fontWeight: 700 }}>&rarr;</span>
+                      <span style={{ color: '#0d9488', margin: '0 0.25rem', fontWeight: 700 }}>&rarr;</span>
                       <span style={{ fontWeight: 600, color: '#0f172a' }}>{t.fundingBranchId}</span>
                     </td>
-                    <td style={{ fontWeight: 700, color: '#0f172a' }}>
+                    <td style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
                       LKR {t.requestedAmount.toLocaleString()}
                     </td>
                     <td>
@@ -254,16 +271,50 @@ export default function TransactionHistoryView({
                         {t.status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#64748b' }}>
-                      {t.bankReference || '—'}
+                    <td style={{ fontSize: '0.75rem', color: '#475569', whiteSpace: 'nowrap' }}>
+                      {t.approvedByUserName ? (
+                        <div>
+                          <div style={{ fontWeight: 600, color: t.approvalDecision === 'REJECTED' ? '#dc2626' : '#166534' }}>
+                            {t.approvalDecision === 'REJECTED' ? 'Rejected by ' : 'Approved by '} {t.approvedByUserName}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            {t.approvalDate ? new Date(t.approvalDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : ''}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>Pending Decision</span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {t.paymentDate ? (
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                            {t.paymentMethod} • Ref: {t.bankTransactionReference || '—'}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            {new Date(t.paymentDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                          </div>
+                          {t.receiptUrl && (
+                            <span style={{ color: '#087f70', fontWeight: 700, fontSize: '0.7rem' }}>
+                              ✓ Receipt Attached
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>Awaiting Payment</span>
+                      )}
                     </td>
                     <td>
                       <button
-                        onClick={() => onSelectTransfer(t)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectTransfer(t);
+                        }}
                         className="btn-secondary"
-                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
                       >
-                        View Details
+                        {t.receiptUrl ? 'View Receipt' : 'View Details'}
                       </button>
                     </td>
                   </tr>

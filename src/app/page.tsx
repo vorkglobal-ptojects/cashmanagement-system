@@ -20,7 +20,7 @@ import CustomerProfileModal from '@/components/CustomerProfileModal';
 import RegisterCustomerModal from '@/components/RegisterCustomerModal';
 
 import { AuthSession, Customer, FundTransferRequest } from '@/lib/types';
-import { Lock, LogIn, AlertCircle, Building2, UserCheck, Shield } from 'lucide-react';
+import { Lock, LogIn, AlertCircle, Building2, UserCheck, Shield, Menu } from 'lucide-react';
 
 export default function CashManagementApp() {
   const [currentScreen, setCurrentScreen] = useState('dashboard');
@@ -29,6 +29,9 @@ export default function CashManagementApp() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [transfers, setTransfers] = useState<FundTransferRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Mobile / Tablet navigation drawer state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Global Filter State (controlled from TopBar search and branch selector)
   const [selectedBranch, setSelectedBranch] = useState('All');
@@ -39,9 +42,9 @@ export default function CashManagementApp() {
   const [selectedTransfer, setSelectedTransfer] = useState<FundTransferRequest | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
-  // Login form state
+  // Login form state - clean password requiring manual typing
   const [loginIdentifier, setLoginIdentifier] = useState('borella');
-  const [loginPassword, setLoginPassword] = useState('borella123@');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -125,15 +128,24 @@ export default function CashManagementApp() {
   }, [currentUser?.userId]);
 
   const handleRoleSwitch = async (targetUsername: string) => {
-    let pass = 'admin123@';
-    if (targetUsername === 'manager' || targetUsername.startsWith('manager_')) pass = 'manager123@';
-    else if (targetUsername === 'admin' || targetUsername === 'sanjay') pass = 'admin123@';
-    else if (targetUsername.startsWith('employee_')) {
-      const b = targetUsername.replace('employee_', '');
-      pass = `${b}123@`;
-    } else {
-      pass = `${targetUsername}123@`;
-    }
+    const credMap: Record<string, string> = {
+      admin: 'Adm#98Kx$21',
+      sanjay: 'Snj@74Vq#89',
+      manager: 'Mgr$62Tp*44',
+      borella: 'Bor#83Qm$19',
+      dehiwela: 'Deh$47Wk#52',
+      dematagoda: 'Dem*91Px#38',
+      homagama: 'Hom#56Yr$71',
+      kadawatha: 'Kad$32Tv#84',
+      kiribathgoda: 'Kir*79Lp#63',
+      kottawa: 'Kot#41Nx$95',
+      panadura: 'Pan$88Qw#27',
+      office: 'Off*65Rt#14',
+      w3: 'W3b#72Vz$89',
+      w4: 'W4p$53Tm#61',
+      super: 'Sup*94Kx#32',
+    };
+    const pass = credMap[targetUsername] || 'Bor#83Qm$19';
     await performLogin(targetUsername, pass);
   };
 
@@ -149,7 +161,7 @@ export default function CashManagementApp() {
     (t) => t.status === 'PAYMENT_SUBMITTED_AWAITING_VERIFICATION' || t.status === 'VERIFICATION_REQUIRED'
   ).length;
 
-  // 1. Unauthenticated Login Screen (Matching User's Uploaded Design)
+  // 1. Unauthenticated Login Screen (Responsive on Phone, Tablet & Desktop)
   if (!currentUser && !loading) {
     return (
       <div style={{
@@ -157,38 +169,20 @@ export default function CashManagementApp() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.5rem',
+        padding: '1.25rem',
         background: '#85dbb1', // User's mint pastel canvas
         fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
       }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '820px',
-          minHeight: '460px',
-          borderRadius: '32px',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.14)',
-          background: '#ffffff',
-        }}>
+        <div className="login-card-container">
           {/* Left Side: Pure White with Logo and Title */}
-          <div style={{
-            background: '#ffffff',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '3rem 2rem',
-            textAlign: 'center',
-          }}>
+          <div className="login-left-pane">
             <div style={{
               width: '210px',
               height: '210px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '1.75rem',
+              marginBottom: '1.5rem',
             }}>
               <img
                 src="/logo.png"
@@ -214,13 +208,7 @@ export default function CashManagementApp() {
           </div>
 
           {/* Right Side: Charcoal Form with Mint Inputs */}
-          <div style={{
-            background: '#352f31',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            padding: '3.5rem 3rem',
-          }}>
+          <div className="login-right-pane">
             {loginError && (
               <div style={{
                 background: '#fee2e2',
@@ -310,7 +298,7 @@ export default function CashManagementApp() {
                 />
               </div>
 
-              {/* Choose Role */}
+              {/* Choose Role / Branch */}
               <div>
                 <label style={{
                   display: 'block',
@@ -327,9 +315,7 @@ export default function CashManagementApp() {
                     onChange={(e) => {
                       const id = e.target.value;
                       setLoginIdentifier(id);
-                      if (id === 'admin' || id === 'sanjay') setLoginPassword('admin123@');
-                      else if (id === 'manager') setLoginPassword('manager123@');
-                      else setLoginPassword(`${id}123@`);
+                      setLoginPassword(''); // Users must manually type their password!
                     }}
                     style={{
                       width: '100%',
@@ -346,23 +332,24 @@ export default function CashManagementApp() {
                       boxSizing: 'border-box',
                     }}
                   >
-                    <optgroup label="Branch Logins (format: branch / branch123@)">
-                      <option value="borella">Borella Branch (borella / borella123@)</option>
-                      <option value="dehiwela">Dehiwela Branch (dehiwela / dehiwela123@)</option>
-                      <option value="dematagoda">Dematagoda Branch (dematagoda / dematagoda123@)</option>
-                      <option value="homagama">Homagama Branch (homagama / homagama123@)</option>
-                      <option value="kadawatha">Kadawatha Branch (kadawatha / kadawatha123@)</option>
-                      <option value="kiribathgoda">Kiribathgoda Branch (kiribathgoda / kiribathgoda123@)</option>
-                      <option value="kottawa">Kottawa Branch (kottawa / kottawa123@)</option>
-                      <option value="panadura">Panadura Branch (panadura / panadura123@)</option>
-                      <option value="w3">W3 Branch (w3 / w3123@)</option>
-                      <option value="w4">W4 Branch (w4 / w4123@)</option>
-                      <option value="office">Office Branch (office / office123@)</option>
-                      <option value="super">Super Branch (super / super123@)</option>
+                    <optgroup label="Branch Offices">
+                      <option value="borella">Borella Branch (borella)</option>
+                      <option value="dehiwela">Dehiwela Branch (dehiwela)</option>
+                      <option value="dematagoda">Dematagoda Branch (dematagoda)</option>
+                      <option value="homagama">Homagama Branch (homagama)</option>
+                      <option value="kadawatha">Kadawatha Branch (kadawatha)</option>
+                      <option value="kiribathgoda">Kiribathgoda Branch (kiribathgoda)</option>
+                      <option value="kottawa">Kottawa Branch (kottawa)</option>
+                      <option value="panadura">Panadura Branch (panadura)</option>
+                      <option value="w3">W3 Branch (w3)</option>
+                      <option value="w4">W4 Branch (w4)</option>
+                      <option value="office">Head Office Branch (office)</option>
+                      <option value="super">Super Branch (super)</option>
                     </optgroup>
-                    <optgroup label="Management & Administration">
-                      <option value="manager">Manager (manager / manager123@)</option>
-                      <option value="admin">Admin (admin / admin123@)</option>
+                    <optgroup label="Management & Executive Approvers">
+                      <option value="manager">Branch Manager (manager)</option>
+                      <option value="admin">Main Administrator (admin)</option>
+                      <option value="sanjay">Executive Approver (sanjay)</option>
                     </optgroup>
                   </select>
                   <div style={{
@@ -413,33 +400,77 @@ export default function CashManagementApp() {
     );
   }
 
-  // 2. Authenticated Application Shell (Company Finance Layout)
+  // 2. Authenticated Application Shell (Responsive on Phone, Tablet & Desktop)
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f4f6f9' }}>
-      {/* Left Sidebar with Docked Profile & Branch Controls */}
-      <Sidebar
-        currentScreen={currentScreen}
-        setCurrentScreen={setCurrentScreen}
-        currentUser={currentUser}
-        pendingCount={pendingCount}
-        paymentCount={paymentCount}
-        verifyCount={verifyCount}
-        onRoleSwitch={handleRoleSwitch}
-        onLogout={handleLogout}
-        selectedBranch={selectedBranch}
-        setSelectedBranch={setSelectedBranch}
-        branches={branches}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f4f6f9' }}>
+      {/* Mobile & Tablet Header Bar (Visible <= 1024px) */}
+      <div className="mobile-top-bar">
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#ffffff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            padding: '0.25rem',
+          }}
+        >
+          <Menu size={22} />
+          <span style={{ fontWeight: 800, fontSize: '0.98rem', letterSpacing: '-0.01em' }}>Company Finance</span>
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#94a3b8' }}>
+          <span>{currentUser?.username}</span>
+          <span style={{
+            background: '#1a3258',
+            color: '#38bdf8',
+            padding: '0.15rem 0.5rem',
+            borderRadius: '999px',
+            fontWeight: 700,
+            fontSize: '0.7rem',
+          }}>
+            {currentUser?.role === 'MAIN_ADMIN' ? 'Admin' : currentUser?.role === 'BRANCH_MANAGER' ? 'Manager' : 'Employee'}
+          </span>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Backdrop */}
+      <div
+        className={`sidebar-overlay ${isMobileMenuOpen ? 'active' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Main Work Area Canvas */}
-      <main style={{
-        flex: 1,
-        padding: '1.75rem 2.25rem',
-        maxWidth: '1600px',
-        width: '100%',
-        overflowX: 'auto',
-        background: '#f4f6f9',
-      }}>
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* Left Sidebar with Docked Profile & Branch Controls */}
+        <Sidebar
+          currentScreen={currentScreen}
+          setCurrentScreen={setCurrentScreen}
+          currentUser={currentUser}
+          pendingCount={pendingCount}
+          paymentCount={paymentCount}
+          verifyCount={verifyCount}
+          onRoleSwitch={handleRoleSwitch}
+          onLogout={handleLogout}
+          selectedBranch={selectedBranch}
+          setSelectedBranch={setSelectedBranch}
+          branches={branches}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+        />
+
+        {/* Main Work Area Canvas */}
+        <main className="main-content-area" style={{
+          flex: 1,
+          padding: '1.75rem 2.25rem',
+          maxWidth: '1600px',
+          width: '100%',
+          overflowX: 'auto',
+          background: '#f4f6f9',
+        }}>
           {currentScreen === 'dashboard' && (
             <CleanDashboardView
               branches={branches}
@@ -574,6 +605,7 @@ export default function CashManagementApp() {
         branches={branches}
         onSuccess={loadMasterData}
       />
+      </div>
     </div>
   );
 }

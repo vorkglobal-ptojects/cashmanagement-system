@@ -56,86 +56,94 @@ async function generateCredentialsPdf() {
 
   let yPos = height - 120;
 
-  // 1. ADMIN LOGIN
-  page.drawText('1. ADMINISTRATOR (Mr. Sanjay)', { x: 36, y: yPos, size: 11, font: fontBold, color: navyColor });
-  yPos -= 16;
+  // 1. ADMIN LOGINS
+  page.drawText('1. SYSTEM ADMINISTRATOR & EXECUTIVE APPROVER', { x: 36, y: yPos, size: 10.5, font: fontBold, color: navyColor });
+  yPos -= 15;
 
-  page.drawRectangle({
-    x: 36,
-    y: yPos - 28,
-    width: width - 72,
-    height: 28,
-    color: white,
-    borderColor: borderGray,
-    borderWidth: 1,
+  const adminLogins = [
+    { title: 'System Admin (admin)', username: 'admin', pass: 'Adm#98Kx$21' },
+    { title: 'Executive Approver (Mr. Sanjay)', username: 'sanjay', pass: 'Snj@74Vq#89' },
+  ];
+
+  adminLogins.forEach((a) => {
+    page.drawRectangle({
+      x: 36,
+      y: yPos - 22,
+      width: width - 72,
+      height: 22,
+      color: white,
+      borderColor: borderGray,
+      borderWidth: 1,
+    });
+    page.drawText(a.title, { x: 46, y: yPos - 15, size: 8.5, font: fontBold, color: darkGray });
+    page.drawText('Username: ', { x: 230, y: yPos - 15, size: 8, font: fontRegular, color: mutedGray });
+    page.drawText(a.username, { x: 280, y: yPos - 15, size: 8.5, font: fontMono, color: navyColor });
+    page.drawText('Password: ', { x: 360, y: yPos - 15, size: 8, font: fontRegular, color: mutedGray });
+    page.drawText(a.pass, { x: 415, y: yPos - 15, size: 8.5, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
+    yPos -= 26;
   });
-  page.drawText('Admin (Company-Wide)', { x: 46, y: yPos - 18, size: 9, font: fontBold, color: darkGray });
-  page.drawText('Username: ', { x: 190, y: yPos - 18, size: 8.5, font: fontRegular, color: mutedGray });
-  page.drawText('admin', { x: 245, y: yPos - 18, size: 9, font: fontMono, color: navyColor });
-  page.drawText('Password: ', { x: 340, y: yPos - 18, size: 8.5, font: fontRegular, color: mutedGray });
-  page.drawText('admin123@', { x: 395, y: yPos - 18, size: 9, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
 
-  yPos -= 42;
+  yPos -= 8;
 
   // 2. MANAGER LOGIN
-  page.drawText('2. MANAGER (Cross-Branch Review & Approvals)', { x: 36, y: yPos, size: 11, font: fontBold, color: navyColor });
-  yPos -= 16;
+  page.drawText('2. BRANCH MANAGER (Cross-Branch Review, Approvals & Payments)', { x: 36, y: yPos, size: 10.5, font: fontBold, color: navyColor });
+  yPos -= 15;
 
   page.drawRectangle({
     x: 36,
-    y: yPos - 28,
+    y: yPos - 22,
     width: width - 72,
-    height: 28,
+    height: 22,
     color: white,
     borderColor: borderGray,
     borderWidth: 1,
   });
-  page.drawText('Manager (All Branches)', { x: 46, y: yPos - 18, size: 9, font: fontBold, color: darkGray });
-  page.drawText('Username: ', { x: 190, y: yPos - 18, size: 8.5, font: fontRegular, color: mutedGray });
-  page.drawText('manager', { x: 245, y: yPos - 18, size: 9, font: fontMono, color: navyColor });
-  page.drawText('Password: ', { x: 340, y: yPos - 18, size: 8.5, font: fontRegular, color: mutedGray });
-  page.drawText('manager123@', { x: 395, y: yPos - 18, size: 9, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
+  page.drawText('Central Branch Manager', { x: 46, y: yPos - 15, size: 8.5, font: fontBold, color: darkGray });
+  page.drawText('Username: ', { x: 230, y: yPos - 15, size: 8, font: fontRegular, color: mutedGray });
+  page.drawText('manager', { x: 280, y: yPos - 15, size: 8.5, font: fontMono, color: navyColor });
+  page.drawText('Password: ', { x: 360, y: yPos - 15, size: 8, font: fontRegular, color: mutedGray });
+  page.drawText('Mgr$62Tp*44', { x: 415, y: yPos - 15, size: 8.5, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
 
-  yPos -= 42;
+  yPos -= 34;
 
   // 3. BRANCH LOGINS
-  page.drawText('3. BRANCH LOGINS (Password format: <branchname>123@)', { x: 36, y: yPos, size: 11, font: fontBold, color: navyColor });
-  yPos -= 16;
+  page.drawText('3. DIRECT BRANCH LOGINS (Unique, Non-Obvious Enterprise Credentials)', { x: 36, y: yPos, size: 10.5, font: fontBold, color: navyColor });
+  yPos -= 15;
 
   const branchLogins = [
-    { branch: 'Borella', username: 'borella', pass: 'borella123@' },
-    { branch: 'Dehiwela', username: 'dehiwela', pass: 'dehiwela123@' },
-    { branch: 'Dematagoda', username: 'dematagoda', pass: 'dematagoda123@' },
-    { branch: 'Homagama', username: 'homagama', pass: 'homagama123@' },
-    { branch: 'Kadawatha', username: 'kadawatha', pass: 'kadawatha123@' },
-    { branch: 'Kiribathgoda', username: 'kiribathgoda', pass: 'kiribathgoda123@' },
-    { branch: 'Kottawa', username: 'kottawa', pass: 'kottawa123@' },
-    { branch: 'Head Office', username: 'office', pass: 'office123@' },
-    { branch: 'Panadura', username: 'panadura', pass: 'panadura123@' },
-    { branch: 'W3', username: 'w3', pass: 'w3123@' },
-    { branch: 'W4', username: 'w4', pass: 'w4123@' },
-    { branch: 'Super Branch', username: 'super', pass: 'super123@' },
+    { branch: 'Borella', username: 'borella', pass: 'Bor#83Qm$19' },
+    { branch: 'Dehiwela', username: 'dehiwela', pass: 'Deh$47Wk#52' },
+    { branch: 'Dematagoda', username: 'dematagoda', pass: 'Dem*91Px#38' },
+    { branch: 'Homagama', username: 'homagama', pass: 'Hom#56Yr$71' },
+    { branch: 'Kadawatha', username: 'kadawatha', pass: 'Kad$32Tv#84' },
+    { branch: 'Kiribathgoda', username: 'kiribathgoda', pass: 'Kir*79Lp#63' },
+    { branch: 'Kottawa', username: 'kottawa', pass: 'Kot#41Nx$95' },
+    { branch: 'Head Office', username: 'office', pass: 'Off*65Rt#14' },
+    { branch: 'Panadura', username: 'panadura', pass: 'Pan$88Qw#27' },
+    { branch: 'W3', username: 'w3', pass: 'W3b#72Vz$89' },
+    { branch: 'W4', username: 'w4', pass: 'W4p$53Tm#61' },
+    { branch: 'Super Branch', username: 'super', pass: 'Sup*94Kx#32' },
   ];
 
   branchLogins.forEach((b) => {
     page.drawRectangle({
       x: 36,
-      y: yPos - 24,
+      y: yPos - 21,
       width: width - 72,
-      height: 24,
+      height: 21,
       color: lightBg,
       borderColor: borderGray,
       borderWidth: 0.5,
     });
 
-    page.drawText(`${b.branch} Branch`, { x: 46, y: yPos - 16, size: 8.5, font: fontBold, color: darkGray });
-    page.drawText('Username: ', { x: 190, y: yPos - 16, size: 8, font: fontRegular, color: mutedGray });
-    page.drawText(b.username, { x: 245, y: yPos - 16, size: 8.5, font: fontMono, color: navyColor });
+    page.drawText(`${b.branch} Branch`, { x: 46, y: yPos - 14, size: 8, font: fontBold, color: darkGray });
+    page.drawText('Username: ', { x: 230, y: yPos - 14, size: 7.5, font: fontRegular, color: mutedGray });
+    page.drawText(b.username, { x: 280, y: yPos - 14, size: 8, font: fontMono, color: navyColor });
 
-    page.drawText('Password: ', { x: 340, y: yPos - 16, size: 8, font: fontRegular, color: mutedGray });
-    page.drawText(b.pass, { x: 395, y: yPos - 16, size: 8.5, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
+    page.drawText('Password: ', { x: 360, y: yPos - 14, size: 7.5, font: fontRegular, color: mutedGray });
+    page.drawText(b.pass, { x: 415, y: yPos - 14, size: 8, font: fontMono, color: rgb(180 / 255, 83 / 255, 9 / 255) });
 
-    yPos -= 28;
+    yPos -= 24;
   });
 
   yPos -= 10;

@@ -69,8 +69,7 @@ export default function TransferDetailsModal({
   const canRecordPayment =
     currentUser?.role === 'MAIN_ADMIN' ||
     currentUser?.role === 'SYSTEM_ADMIN' ||
-    currentUser?.role === 'BRANCH_MANAGER' ||
-    currentUser?.role === 'BRANCH_EMPLOYEE';
+    currentUser?.role === 'BRANCH_MANAGER';
 
   const isVerifier =
     currentUser?.role === 'MAIN_ADMIN' ||
@@ -864,21 +863,44 @@ export default function TransferDetailsModal({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2rem',
+          padding: '1.5rem',
         }}>
-          <div style={{ width: '100%', maxWidth: '750px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>
-              Payment Advice: {transfer.receiptFileName}
-            </h3>
-            <button
-              onClick={() => setIsReceiptPreviewOpen(false)}
-              style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}
-            >
-              <X size={24} />
-            </button>
+          <div style={{ width: '100%', maxWidth: '850px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, fontWeight: 700 }}>
+                Payment Advice: {transfer.receiptFileName || 'Receipt Document'}
+              </h3>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                Uploaded by {transfer.paidByUserName || 'Manager'} • {transfer.paymentDate ? new Date(transfer.paymentDate).toLocaleString() : ''}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <a
+                href={transfer.receiptUrl}
+                download={transfer.receiptFileName || 'payment_receipt'}
+                className="btn-cf-primary"
+                style={{
+                  textDecoration: 'none',
+                  fontSize: '0.8rem',
+                  padding: '0.4rem 0.85rem',
+                }}
+              >
+                Download Receipt File
+              </a>
+              <button
+                type="button"
+                onClick={() => setIsReceiptPreviewOpen(false)}
+                style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', color: '#fff', borderRadius: '6px', padding: '0.35rem 0.6rem', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
+
           <div style={{
-            maxWidth: '100%',
+            width: '100%',
+            maxWidth: '850px',
             maxHeight: '80vh',
             overflow: 'auto',
             borderRadius: '12px',
@@ -888,11 +910,19 @@ export default function TransferDetailsModal({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <img
-              src={transfer.receiptUrl}
-              alt="Payment Receipt Advice"
-              style={{ maxWidth: '100%', maxHeight: '78vh', objectFit: 'contain' }}
-            />
+            {transfer.receiptMimeType === 'application/pdf' || transfer.receiptUrl.startsWith('data:application/pdf') ? (
+              <iframe
+                src={transfer.receiptUrl}
+                title="Payment Receipt PDF"
+                style={{ width: '100%', height: '78vh', border: 'none' }}
+              />
+            ) : (
+              <img
+                src={transfer.receiptUrl}
+                alt="Payment Receipt Advice"
+                style={{ maxWidth: '100%', maxHeight: '78vh', objectFit: 'contain' }}
+              />
+            )}
           </div>
         </div>
       )}

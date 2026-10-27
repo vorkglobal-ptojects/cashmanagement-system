@@ -59,10 +59,17 @@ export default function CleanDashboardView({
 
   // Branch and query filtering
   const filtered = transfers.filter((t) => {
+    const matchesEmployee = !isEmployee || (
+      t.requestingBranchId === currentUser?.branchId ||
+      t.fundingBranchId === currentUser?.branchId
+    );
+
     const matchesBranch =
-      selectedBranch === 'All' ||
-      t.requestingBranchId === selectedBranch ||
-      t.fundingBranchId === selectedBranch;
+      isEmployee
+        ? matchesEmployee
+        : selectedBranch === 'All' ||
+          t.requestingBranchId === selectedBranch ||
+          t.fundingBranchId === selectedBranch;
 
     const matchesStatus =
       statusFilter === 'ALL' || t.status === statusFilter;
@@ -74,7 +81,7 @@ export default function CleanDashboardView({
       (t.bankReference || '').toLowerCase().includes(activeSearch) ||
       (t.customerNic || t.customer?.nicNumber || '').toLowerCase().includes(activeSearch);
 
-    return matchesBranch && matchesStatus && matchesSearch;
+    return matchesEmployee && matchesBranch && matchesStatus && matchesSearch;
   });
 
   const pendingApprovals = filtered.filter((t) => t.status === 'PENDING_APPROVAL');
