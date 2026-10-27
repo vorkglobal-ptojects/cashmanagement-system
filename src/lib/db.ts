@@ -2,18 +2,24 @@ import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
-// Ensure SQLite database file is available regardless of CWD resolution
+// Compute absolute path to the SQLite database with forward slashes (safe on Windows)
+const prismaDbPath = path.resolve(process.cwd(), 'prisma', 'dev.db').replace(/\\/g, '/');
+const rootDbPath = path.resolve(process.cwd(), 'dev.db').replace(/\\/g, '/');
+
+// Ensure database file exists in both locations so any tool can access it
 try {
-  const rootDb = path.resolve(process.cwd(), 'dev.db');
-  const prismaDb = path.resolve(process.cwd(), 'prisma', 'dev.db');
-  if (fs.existsSync(prismaDb) && !fs.existsSync(rootDb)) {
-    fs.copyFileSync(prismaDb, rootDb);
-  } else if (fs.existsSync(rootDb) && !fs.existsSync(prismaDb)) {
-    fs.copyFileSync(rootDb, prismaDb);
+  if (fs.existsSync(prismaDbPath) && !fs.existsSync(rootDbPath)) {
+    fs.copyFileSync(prismaDbPath, rootDbPath);
+  } else if (fs.existsSync(rootDbPath) && !fs.existsSync(prismaDbPath)) {
+    fs.copyFileSync(rootDbPath, prismaDbPath);
   }
 } catch {
   // Pass through
 }
+
+// Target the existing database file with an unambiguous absolute file URL
+const targetDbFile = fs.existsSync(prismaDbPath) ? prismaDbPath : rootDbPath;
+const absoluteDbUrl = `file:${targetDbFile}`;
 
 declare global {
   // eslint-disable-next-line no-var
@@ -23,6 +29,11 @@ declare global {
 export const prisma =
   globalThis.prismaGlobal ??
   new PrismaClient({
+    datasources: {
+      db: {
+        url: absoluteDbUrl,
+      },
+    },
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
 

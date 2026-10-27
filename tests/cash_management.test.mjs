@@ -3,7 +3,13 @@ import assert from 'node:assert';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+import path from 'path';
+const dbPath = path.resolve('prisma/dev.db').replace(/\\/g, '/');
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: `file:${dbPath}` },
+  },
+});
 
 // Helper calculation
 function calculateTallyTotal(breakdown) {

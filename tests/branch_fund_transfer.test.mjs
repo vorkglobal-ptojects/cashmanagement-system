@@ -12,7 +12,13 @@ function maskBankAccount(accountNo) {
   return '******' + accountNo.slice(-4);
 }
 
-const prisma = new PrismaClient();
+import path from 'path';
+const dbPath = path.resolve('prisma/dev.db').replace(/\\/g, '/');
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: `file:${dbPath}` },
+  },
+});
 
 describe('Centralized Branch Fund Transfer Management System — Acceptance Tests', () => {
   let employeeUser;

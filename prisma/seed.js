@@ -1,7 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-
-const prisma = new PrismaClient();
+const path = require('path');
+const dbPath = path.resolve(__dirname, 'dev.db').replace(/\\/g, '/');
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: `file:${dbPath}` },
+  },
+});
 
 async function main() {
   console.log('Seeding Centralized Branch Fund Transfer Management System...');
