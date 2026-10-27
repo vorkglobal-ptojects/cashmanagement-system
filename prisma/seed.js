@@ -677,6 +677,21 @@ async function main() {
     await prisma.auditEvent.create({ data: a });
   }
   console.log(`Seeded ${auditLogs.length} audit logs.`);
+
+  // Synchronize database file to root dev.db
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    const rootDb = path.resolve(process.cwd(), 'dev.db');
+    const prismaDb = path.resolve(process.cwd(), 'prisma', 'dev.db');
+    if (fs.existsSync(prismaDb)) {
+      fs.copyFileSync(prismaDb, rootDb);
+      console.log('Synchronized database to root dev.db successfully.');
+    }
+  } catch (err) {
+    console.error('Database sync warning:', err);
+  }
+
   console.log('Seeding finished successfully.');
 }
 
