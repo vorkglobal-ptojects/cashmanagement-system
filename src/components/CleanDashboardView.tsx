@@ -17,7 +17,8 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Filter
+  Filter,
+  Search
 } from 'lucide-react';
 import { AuthSession, Customer, FundTransferRequest } from '@/lib/types';
 
@@ -47,13 +48,16 @@ export default function CleanDashboardView({
   searchTerm,
 }: CleanDashboardViewProps) {
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [localSearch, setLocalSearch] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const isAdmin = currentUser?.role === 'MAIN_ADMIN' || currentUser?.role === 'SYSTEM_ADMIN';
   const isManager = currentUser?.role === 'BRANCH_MANAGER';
   const isEmployee = currentUser?.role === 'BRANCH_EMPLOYEE';
 
-  // Branch filtering
+  const activeSearch = (localSearch || searchTerm || '').trim().toLowerCase();
+
+  // Branch and query filtering
   const filtered = transfers.filter((t) => {
     const matchesBranch =
       selectedBranch === 'All' ||
@@ -64,10 +68,11 @@ export default function CleanDashboardView({
       statusFilter === 'ALL' || t.status === statusFilter;
 
     const matchesSearch =
-      !searchTerm ||
-      (t.requestNumber || t.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.customerName || t.customer?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.bankReference || '').toLowerCase().includes(searchTerm.toLowerCase());
+      !activeSearch ||
+      (t.requestNumber || t.id).toLowerCase().includes(activeSearch) ||
+      (t.customerName || t.customer?.fullName || '').toLowerCase().includes(activeSearch) ||
+      (t.bankReference || '').toLowerCase().includes(activeSearch) ||
+      (t.customerNic || t.customer?.nicNumber || '').toLowerCase().includes(activeSearch);
 
     return matchesBranch && matchesStatus && matchesSearch;
   });
@@ -81,6 +86,28 @@ export default function CleanDashboardView({
 
   const totalDisbursed = completed.reduce((sum, t) => sum + (t.actualAmountPaid || t.requestedAmount), 0);
   const queuedPaymentsTotal = awaitingPayment.reduce((sum, t) => sum + t.requestedAmount, 0);
+
+  const handleExportCsv = () => {
+    const headers = ['Request Number', 'Customer Name', 'Customer NIC', 'Requesting Branch', 'Funding Branch', 'Amount (LKR)', 'Status', 'Date'];
+    const rows = filtered.map((t) => [
+      t.requestNumber || t.id,
+      `"${(t.customerName || t.customer?.fullName || '').replace(/"/g, '""')}"`,
+      t.customerNic || t.customer?.nicNumber || '',
+      t.requestingBranchId || '',
+      t.fundingBranchId || '',
+      t.requestedAmount,
+      t.status,
+      new Date(t.createdAt).toISOString().split('T')[0],
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `branch_transfers_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Quick Inline Decision (1-click Approve/Reject from dashboard table!)
   const handleQuickDecision = async (e: React.MouseEvent, transferId: string, decision: 'APPROVE' | 'REJECT') => {
@@ -172,8 +199,9 @@ export default function CleanDashboardView({
             <>
               <button
                 type="button"
-                onClick={() => onNavigate('reports')}
+                onClick={handleExportCsv}
                 className="btn-cf-outline"
+                title="Download CSV spreadsheet of current transfers"
               >
                 <Download size={14} /> Export report
               </button>
@@ -414,7 +442,43 @@ export default function CleanDashboardView({
             <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Shared register • Latest activity across all branches</div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            {/* Inline Fast Search */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              padding: '0.35rem 0.65rem',
+            }}>
+              <Search size={14} color="#94a3b8" />
+              <input
+                type="text"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                placeholder="Search customer, ID, ref..."
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '0.78rem',
+                  width: '180px',
+                  color: '#0f172a',
+                  background: 'transparent',
+                }}
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => setLocalSearch('')}
+                  style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -469,8 +533,37 @@ export default function CleanDashboardView({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
-                    No transfer requests found.
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: '#64748b' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                      No transfer requests found matching current filters
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
+                      {selectedBranch !== 'All' ? `Filtered by branch: ${selectedBranch}` : 'No active requests in this view'}
+                    </div>
+                    <div style={{ display: 'inline-flex', gap: '0.65rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBranch('All');
+                          setStatusFilter('ALL');
+                          setLocalSearch('');
+                        }}
+                        className="btn-cf-outline"
+                        style={{ fontSize: '0.78rem', padding: '0.45rem 0.95rem' }}
+                      >
+                        Show All 11 Branches
+                      </button>
+                      {isEmployee && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('new-request')}
+                          className="btn-cf-primary"
+                          style={{ fontSize: '0.78rem', padding: '0.45rem 0.95rem' }}
+                        >
+                          <Plus size={14} /> Create Transfer Request
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (

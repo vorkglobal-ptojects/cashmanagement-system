@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import TopBar from '@/components/TopBar';
 import Sidebar from '@/components/Sidebar';
 
 import CleanDashboardView from '@/components/CleanDashboardView';
@@ -393,40 +392,31 @@ export default function CashManagementApp() {
 
   // 2. Authenticated Application Shell (Company Finance Layout)
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f4f6f9' }}>
-      {/* Top Navigation Bar */}
-      <TopBar
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#f4f6f9' }}>
+      {/* Left Sidebar with Docked Profile & Branch Controls */}
+      <Sidebar
+        currentScreen={currentScreen}
+        setCurrentScreen={setCurrentScreen}
         currentUser={currentUser}
+        pendingCount={pendingCount}
+        paymentCount={paymentCount}
+        verifyCount={verifyCount}
         onRoleSwitch={handleRoleSwitch}
         onLogout={handleLogout}
         selectedBranch={selectedBranch}
         setSelectedBranch={setSelectedBranch}
         branches={branches}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
       />
 
-      {/* Main Shell: Left Navigation Rail + Active Work Area */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 'calc(100vh - 60px)' }}>
-        {/* Left Sidebar */}
-        <Sidebar
-          currentScreen={currentScreen}
-          setCurrentScreen={setCurrentScreen}
-          currentUser={currentUser}
-          pendingCount={pendingCount}
-          paymentCount={paymentCount}
-          verifyCount={verifyCount}
-        />
-
-        {/* Work Area Canvas */}
-        <main style={{
-          flex: 1,
-          padding: '1.5rem 2rem',
-          maxWidth: '1600px',
-          width: '100%',
-          overflowX: 'auto',
-          background: '#f4f6f9',
-        }}>
+      {/* Main Work Area Canvas */}
+      <main style={{
+        flex: 1,
+        padding: '1.75rem 2.25rem',
+        maxWidth: '1600px',
+        width: '100%',
+        overflowX: 'auto',
+        background: '#f4f6f9',
+      }}>
           {currentScreen === 'dashboard' && (
             <CleanDashboardView
               branches={branches}
@@ -536,10 +526,9 @@ export default function CashManagementApp() {
             />
           )}
         </main>
-      </div>
 
-      {/* Modals */}
-      <TransferDetailsModal
+        {/* Modals */}
+        <TransferDetailsModal
         isOpen={!!selectedTransfer}
         onClose={() => setSelectedTransfer(null)}
         transfer={selectedTransfer}
